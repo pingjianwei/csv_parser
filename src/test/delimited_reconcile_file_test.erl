@@ -188,19 +188,19 @@ config5() ->
 pase_test()->
   Config3 = config3(),
   {ok,Bin3} = file:read_file("tests/20170625.txt.netbank"),
-  L3 = delimited_reconcile_file:pase(Config3,Bin3),
+  L3 = delimited_reconcile_file:parse(Config3,Bin3),
 
   Config4 = config4(),
   {ok,Bin4} = file:read_file("tests/20170625.txt.wap"),
-  L4 = delimited_reconcile_file:pase(Config4,Bin4),
+  L4 = delimited_reconcile_file:parse(Config4,Bin4),
 
   Config5 = config5(),
   {ok,Bin5} = file:read_file("tests/p-jif1.txt"),
-  L5 = delimited_reconcile_file:pase(Config5,Bin5),
+  L5 = delimited_reconcile_file:parse(Config5,Bin5),
 
   Config = config(),
   {ok,Bin} = file:read_file("tests/test.csv"),
-  L = delimited_reconcile_file:pase(Config,Bin),
+  L = delimited_reconcile_file:parse(Config,Bin),
 
 
 

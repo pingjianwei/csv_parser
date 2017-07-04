@@ -10,9 +10,9 @@
 -author("jiarj").
 
 %% API
--export([pase/2]).
+-export([parse/2]).
 
-pase(Config,Bin) ->
+parse(Config,Bin) ->
   BinListDetail = content_pase(Config,Bin),
   %lager:debug("line:~p",[length(BinListDetail)]),
   [line_to_map(Line,Config) || Line <- BinListDetail].
@@ -48,8 +48,8 @@ line_to_map(Line, Config) when is_binary(Line) ->
   Keys = maps:keys(Field_map),
   maps:from_list([ to_list(X,List,maps:get(X,Field_map)) || X<-Keys]).
 
-to_list(X, List, FieldMap) when is_tuple(FieldMap) ->
-  {Total,Text_identifier} = FieldMap,
+to_list(X, List, Value) when is_tuple(Value) ->
+  {Total,Text_identifier} = Value,
   Val = proplists:get_value(Total,List),
   Field = binary:replace(Val, Text_identifier,<<"">>, [global]),
   {X,Field};
