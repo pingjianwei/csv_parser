@@ -10,8 +10,9 @@
 -author("jiarj").
 
 %% API
--export([parse/2]).
+-export([parse/2, file_write/3, read_line_Gap/3]).
 
+%%---------------------------------------------------------------------------------------
 parse(Config,Bin) ->
   Delimit_line = maps:get(delimit_line, Config, undefined),
   BinList = binary:split(Bin, Delimit_line, [global, trim]),
@@ -74,4 +75,57 @@ to_list(X, List, Value) when is_tuple(Value) ->
 to_list(X, List, FieldMap) when is_binary(FieldMap) ->
   Val = proplists:get_value(FieldMap,List),
   {X,Val}.
+
+%%---------------------------------------------------------------------------------------
+
+file_write(FileName,L,Lists)->
+  LinesGap = 500,
+  file:write_file(FileName, [], [write]),
+  F = fun
+        (Repo, {N, Acc, Total}) when N >= LinesGap ->
+          lager:info("Write ~p lines to file:~ts", [Total, FileName]),
+          file:write_file(FileName, Acc, [append]),
+          %% initial new empty acc
+          {1, [to_term(Repo,Lists)], Total + N};
+        (Repo, {N, Acc, Total}) ->
+          {N + 1, [to_term(Repo,Lists) | Acc], Total}
+      end,
+
+  {N, Rest, SubTotal}  = lists:foldl(F, {0, [], 0}, L),
+  lager:info("Write ~p lines to file:~ts", [SubTotal + N, FileName]),
+  file:write_file(FileName, Rest, [append]).
+
+
+to_term(Repo,List) when is_list(Repo) ->
+  Map = maps:from_list(Repo),
+  to_term(Map,List);
+to_term(Repo,List) when is_map(Repo) ->
+
+  ValueList = lists:map(fun(Key)-> maps:get(Key,Repo) end,List),
+  %ValueList = maps:values(Repo),
+  ValueListWithLimit = lists:join(<<"\,">>, ValueList),
+  lists:append(ValueListWithLimit,[<<$\n>>]).
+%%---------------------------------------------------------------------------------------
+read_line_Gap(FileName,LinesGap,F)->
+  {ok, Fd} = file:open(FileName, [raw, binary]),
+  read_line(Fd,LinesGap,F),
+  file:close(Fd).
+
+read_line(Fd,LinesGap,F) ->
+  read_line(Fd,<<"">>,[],0,LinesGap,F).
+read_line(_Fd,Line,eof,_,_,F) ->
+  F(Line);
+read_line(Fd,Line,[],N,LinesGap,F) when N>= LinesGap ->
+  F(Line),
+  {Line3,Sign} = case file:read_line(Fd) of
+                   {ok,Line2} ->{Line2,[]};
+                   eof -> {<<"">>,eof}
+                 end,
+  read_line(Fd,Line3,Sign,1,LinesGap,F);
+read_line(Fd,Line,[],N,LinesGap,F) when N < LinesGap ->
+  {Line3,Sign} = case file:read_line(Fd) of
+                   {ok,Line2} ->{Line2,[]};
+                   eof -> {<<"">>,eof}
+                 end,
+  read_line(Fd,<<Line/binary,Line3/binary>>,Sign,N+1,LinesGap,F).
 
