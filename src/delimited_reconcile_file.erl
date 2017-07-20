@@ -17,21 +17,26 @@ parse(Config,Bin) ->
   Delimit_line = maps:get(delimit_line, Config, undefined),
   BinList = binary:split(Bin, Delimit_line, [global, trim]),
   TotalLines = length(BinList),
-  SkipTopLines = maps:get(skipTopLines, Config, undefined),
-  SkipEndLines = maps:get(skipEndLines, Config, undefined),
+  SkipTopLines = maps:get(skipTopLines, Config, 0),
+  SkipEndLines = maps:get(skipEndLines, Config, 0),
   Delimit_field = maps:get(delimit_field, Config, undefined),
   Field_map = maps:get(field_map, Config, undefined),
   HeadLine = maps:get(headLine, Config, undefined),
-  BinHeadLine = get_file_head(BinList,HeadLine),
-
   Separation_line = maps:get(separation_line, Config, undefined),
 
   BinContent = get_content(BinList,SkipTopLines,TotalLines,SkipEndLines,Separation_line),
 
-  ListHeadLine = headLine_to_list(BinHeadLine,hd(BinContent),Delimit_field),
 
-  %lager:debug("line:~p",[length(BinListDetail)]),
-  [line_to_map(Line,Delimit_field,ListHeadLine,Field_map) || Line <- BinContent].
+  case Delimit_field of
+    undefined->
+      [line_to_map(Line,Field_map) || Line <- BinContent];
+    Delimit_field ->
+      BinHeadLine = get_file_head(BinList,HeadLine),
+      ListHeadLine = headLine_to_list(BinHeadLine,hd(BinContent),Delimit_field),
+      %lager:debug("line:~p",[length(BinListDetail)]),
+      [line_to_map(Line,Delimit_field,ListHeadLine,Field_map) || Line <- BinContent]
+
+  end.
 
 
 get_file_head(BinList,HeadLine) when is_integer(HeadLine)->
@@ -60,6 +65,13 @@ fun_filter_line(L) ->
   fun(T) ->
     T =/= L
   end.
+
+line_to_map(Line, FieldMap) ->
+  Lists = maps:to_list(FieldMap),
+  F = fun({Fidle,{Pos,Len}},Acc)->
+    [{Fidle,binary:part(Line,{Pos,Len})} | Acc ]
+      end,
+  maps:from_list(lists:foldl(F,[],Lists)).
 line_to_map(Line, Delimit_field,BinHeadLine,Field_map) when is_binary(Line) ->
   L = binary:split(Line, Delimit_field, [global]),
   List = lists:zip(BinHeadLine,L),

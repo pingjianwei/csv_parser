@@ -3,7 +3,7 @@
  {<<"lager">>,{pkg,<<"lager">>,<<"3.2.1">>},1},
  {<<"xfutils">>,
   {git,"https://github.com/simonxu72/erlang-xfutils",
-       {ref,"1f1e8c38318e7270264703ebf4709ce84097bece"}},
+       {ref,"1d163ab64507c8c84e8c0c696aa4215403d725b9"}},
   0}]}.
 [
 {pkg_hash,[
