@@ -118,8 +118,8 @@ to_term(Repo,List) when is_map(Repo) ->
 
   ValueList = lists:map(fun(Key)-> maps:get(Key,Repo) end,List),
   %ValueList = maps:values(Repo),
-  ValueListWithLimit = lists:join(<<"\,">>, ValueList),
-  lists:append(ValueListWithLimit,[<<$\n>>]).
+  ValueListWithLimit = lists:join(<<$\t>>, ValueList),
+  lists:append(ValueListWithLimit,[<<$\r, $\n>>]).
 %%---------------------------------------------------------------------------------------
 read_line_Gap(FileName,LinesGap,F)->
   {ok, Fd} = file:open(FileName, [raw, binary]),
