@@ -10,7 +10,7 @@
 -author("jiarj").
 
 %% API
--export([parse/2, file_write/3, read_line_Gap/3]).
+-export([parse/2, file_write/3, read_line_Gap/3, file_write/4]).
 
 %%---------------------------------------------------------------------------------------
 parse(Config,Bin) ->
@@ -107,6 +107,9 @@ file_write(FileName,L,Lists)->
   lager:info("Write ~p lines to file:~ts", [SubTotal + N, FileName]),
   file:write_file(FileName, Rest, [append]).
 
+file_write(FileName, L, Lists,[append])->
+  Prpol = lists:map(fun(X)-> to_term(X,Lists) end,L),
+  file:write_file(FileName, Prpol, [append]).
 
 to_term(Repo,List) when is_list(Repo) ->
   Map = maps:from_list(Repo),
