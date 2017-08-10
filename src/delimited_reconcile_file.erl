@@ -126,21 +126,24 @@ read_line_Gap(FileName,LinesGap,F)->
   read_line(Fd,LinesGap,F),
   file:close(Fd).
 
-read_line(Fd,LinesGap,F) ->
-  read_line(Fd,<<"">>,[],0,LinesGap,F).
-read_line(_Fd,Line,eof,_,_,F) ->
+
+read_line(Fd, LinesGap, F) ->
+  read_line(Fd, <<"">>, [], [0,0], LinesGap, F).
+read_line(_Fd, Line, eof, [N,Total], _, F) ->
+  lager:info("F:~p lines to file:~ts", [Total+N-1]),
   F(Line);
-read_line(Fd,Line,[],N,LinesGap,F) when N>= LinesGap ->
+read_line(Fd, Line, [], [N,Total], LinesGap, F) when N >= LinesGap ->
+  lager:info("F:~p lines to file:~ts", [Total]),
   F(Line),
-  {Line3,Sign} = case file:read_line(Fd) of
-                   {ok,Line2} ->{Line2,[]};
-                   eof -> {<<"">>,eof}
-                 end,
-  read_line(Fd,Line3,Sign,1,LinesGap,F);
-read_line(Fd,Line,[],N,LinesGap,F) when N < LinesGap ->
-  {Line3,Sign} = case file:read_line(Fd) of
-                   {ok,Line2} ->{Line2,[]};
-                   eof -> {<<"">>,eof}
-                 end,
-  read_line(Fd,<<Line/binary,Line3/binary>>,Sign,N+1,LinesGap,F).
+  {Line3, Sign} = case file:read_line(Fd) of
+                    {ok, Line2} -> {Line2, []};
+                    eof -> {<<"">>, eof}
+                  end,
+  read_line(Fd, Line3, Sign, [1,Total+N], LinesGap, F);
+read_line(Fd, Line, [], [N,Total], LinesGap, F) when N < LinesGap ->
+  {Line3, Sign} = case file:read_line(Fd) of
+                    {ok, Line2} -> {Line2, []};
+                    eof -> {<<"">>, eof}
+                  end,
+  read_line(Fd, <<Line/binary, Line3/binary>>, Sign, [N + 1,Total], LinesGap, F).
 
