@@ -10,7 +10,7 @@
 -author("jiarj").
 
 %% API
--export([parse/2, file_write/3, read_line_Gap/3, file_write/4]).
+-export([parse/2,read_line_fold/3, write_to_file/5, write_to_file/6]).
 
 %%---------------------------------------------------------------------------------------
 parse(Config,Bin) ->
@@ -90,7 +90,7 @@ to_list(X, List, FieldMap) when is_binary(FieldMap) ->
 
 %%---------------------------------------------------------------------------------------
 
-file_write(FileName,L,Lists)->
+write_to_file(FileName,L,Field,Delimit_field,Delimit_line)->
   LinesGap = 500,
   file:write_file(FileName, [], [write]),
   F = fun
@@ -98,30 +98,30 @@ file_write(FileName,L,Lists)->
           lager:info("Write ~p lines to file:~ts", [Total, FileName]),
           file:write_file(FileName, Acc, [append]),
           %% initial new empty acc
-          {1, [to_term(Repo,Lists)], Total + N};
+          {1, [to_term(Repo,Field,Delimit_field,Delimit_line)], Total + N};
         (Repo, {N, Acc, Total}) ->
-          {N + 1, [to_term(Repo,Lists) | Acc], Total}
+          {N + 1, [to_term(Repo,Field,Delimit_field,Delimit_line) | Acc], Total}
       end,
 
   {N, Rest, SubTotal}  = lists:foldl(F, {0, [], 0}, L),
   lager:info("Write ~p lines to file:~ts", [SubTotal + N, FileName]),
   file:write_file(FileName, Rest, [append]).
 
-file_write(FileName, L, Lists,[append])->
-  Prpol = lists:map(fun(X)-> to_term(X,Lists) end,L),
+write_to_file(FileName, L, Lists,Delimit_field,Delimit_line,[append])->
+  Prpol = lists:map(fun(X)-> to_term(X,Lists,Delimit_field,Delimit_line) end,L),
   file:write_file(FileName, Prpol, [append]).
 
-to_term(Repo,List) when is_list(Repo) ->
+to_term(Repo,List,Delimit_field,Delimit_line) when is_list(Repo) ->
   Map = maps:from_list(Repo),
-  to_term(Map,List);
-to_term(Repo,List) when is_map(Repo) ->
+  to_term(Map,List,Delimit_field,Delimit_line);
+to_term(Repo,List,Delimit_field,Delimit_line) when is_map(Repo) ->
 
   ValueList = lists:map(fun(Key)-> maps:get(Key,Repo) end,List),
   %ValueList = maps:values(Repo),
-  ValueListWithLimit = lists:join(<<$^,$^>>, ValueList),
-  lists:append(ValueListWithLimit,[<<$\r, $\n>>]).
+  ValueListWithLimit = lists:join(Delimit_field, ValueList),
+  lists:append(ValueListWithLimit,[Delimit_line]).
 %%---------------------------------------------------------------------------------------
-read_line_Gap(FileName,LinesGap,F)->
+read_line_fold(F,FileName,LinesGap)->
   {ok, Fd} = file:open(FileName, [raw, binary]),
   read_line(Fd,LinesGap,F),
   file:close(Fd).
