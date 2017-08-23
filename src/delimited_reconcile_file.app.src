@@ -1,11 +1,11 @@
 {application, delimited_reconcile_file,
- [{description, "An OTP application"},
+ [{description, "An OTP library"},
   {vsn, "0.1.0"},
   {registered, []},
-  {mod, { delimited_reconcile_file_app, []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    lager
    ]},
   {env,[]},
   {modules, []},
